@@ -6,7 +6,7 @@ class EksAuth(object):
   import time as __time
   import logging as __logging
   FORMAT = "%(asctime)-15s %(message)s"
-  __logging.basicConfig(format=FORMAT,level=__logging.INFO)
+  __logging.basicConfig(format=FORMAT,level=__logging.DEBUG)
   #Disable boto3 logging
   __logging.getLogger('boto3').setLevel(__logging.CRITICAL)
   #Disable botocore logging
@@ -66,12 +66,11 @@ class EksAuth(object):
     params = { 'method': 'GET', 'url': 'https://sts.amazonaws.com/?' + req_params, 'body': {},'headers': {'x-k8s-aws-id': self.clusterName}, 'context': {} }
     url=signer.generate_presigned_url(params, region_name='us-east-1', operation_name='',expires_in=60)
     self.__logging.debug('URL: ' + url)
-    b64url=self.__base64.urlsafe_b64encode(url)
-    self.__logging.debug ('Mod of b64: %s %s' % (len(url) % 4, len(url)))
+    b64url=self.__base64.urlsafe_b64encode(url.encode('ascii')).decode('ascii')
     self.__logging.debug ('F... padding '  + b64url)
     while ('=' in b64url):
-      url += b'&'
-      b64url=self.__base64.urlsafe_b64encode(url)
+      url += '&'
+      b64url=self.__base64.urlsafe_b64encode(url.encode('ascii')).decode('ascii')
       self.__logging.debug ('F... padding '  + b64url)
       self.__time.sleep(1)
     self.__logging.debug('URL' + url)

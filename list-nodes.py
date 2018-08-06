@@ -10,9 +10,9 @@ from pprint import pprint
 
 def main():
   from kubernetes import client
-  #client2 = EksAuth('authenticator.albvzzqogi.k8s.local')
-  #client2.roleArn='arn:aws:iam::297286928529:role/KubernetesAdmin'
-  client2 = EksAuth('eks-sample')
+  client2 = EksAuth('authenticator.albvzzqogi.k8s.local')
+  client2.roleArn='arn:aws:iam::297286928529:role/KubernetesAdmin'
+  #client2 = EksAuth('eks-sample')
 
   try:
     eks = client2.getKubernetesConfig()
