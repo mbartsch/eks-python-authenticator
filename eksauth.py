@@ -4,6 +4,17 @@ class EksAuth(object):
   import base64 as __base64
   import boto3 as __boto3
   import time as __time
+  import logging as __logging
+  FORMAT = "%(asctime)-15s %(message)s"
+  __logging.basicConfig(format=FORMAT,level=__logging.INFO)
+  #Disable boto3 logging
+  __logging.getLogger('boto3').setLevel(__logging.CRITICAL)
+  #Disable botocore logging
+  __logging.getLogger('botocore').setLevel(__logging.CRITICAL)
+  #Disable nose logging
+  __logging.getLogger('nose').setLevel(__logging.CRITICAL)
+  #Disable s3transfer logging
+  __logging.getLogger('s3transfer').setLevel(__logging.CRITICAL)
 
   from kubernetes import client as __client
   from kubernetes import config as __config
@@ -27,21 +38,21 @@ class EksAuth(object):
     a role
     '''
     if self.roleArn == None:
-      logging.info('default')
+      self.__logging.debug('default')
       return self.__boto3.Session(region_name=self.region_name)
     else:
       sts = self.__boto3.client('sts')
-      logging.info('role %s', self.roleArn)
+      self.__logging.debug('role %s', self.roleArn)
       try:
         authDict=sts.assume_role(RoleArn=self.roleArn, RoleSessionName='PythonIAMAuth')['Credentials']
       except Exception as e:
-        print("Error: " , e)
+        self.__logging.error("Error: " , e)
       sess = self.__boto3.Session(region_name=self.region_name,
           aws_access_key_id=authDict['AccessKeyId'],
           aws_secret_access_key=authDict['SecretAccessKey'],
           aws_session_token=authDict['SessionToken'])
-      print (sess)
-      print (authDict)
+      self.__logging.debug (sess)
+      self.__logging.debug (authDict)
       return sess
 
   def getToken(self):
@@ -54,35 +65,35 @@ class EksAuth(object):
     req_params='Action=GetCallerIdentity&Version=2011-06-15'
     params = { 'method': 'GET', 'url': 'https://sts.amazonaws.com/?' + req_params, 'body': {},'headers': {'x-k8s-aws-id': self.clusterName}, 'context': {} }
     url=signer.generate_presigned_url(params, region_name='us-east-1', operation_name='',expires_in=60)
-    print('URL: ' + url)
+    self.__logging.debug('URL: ' + url)
     b64url=self.__base64.urlsafe_b64encode(url)
-    print ('Mod of b64: %s %s' % (len(url) % 4, len(url)))
-    print ('F... padding '  + b64url)
+    self.__logging.debug ('Mod of b64: %s %s' % (len(url) % 4, len(url)))
+    self.__logging.debug ('F... padding '  + b64url)
     while ('=' in b64url):
       url += b'&'
       b64url=self.__base64.urlsafe_b64encode(url)
-      print ('F... padding '  + b64url)
+      self.__logging.debug ('F... padding '  + b64url)
       self.__time.sleep(1)
-    print('URL' + url)
-    print('Base64 encode ' + b64url)
+    self.__logging.debug('URL' + url)
+    self.__logging.debug('Base64 encode ' + b64url)
     value = 'k8s-aws-v1.' + b64url
-    print('EKS Token: ' + value)
+    self.__logging.debug('EKS Token: ' + value)
     return value
 
   def getContextForCluster(self):
     contexts, active_context = self.__config.list_kube_config_contexts()
     if not contexts:
-      print ('No Contexts')
+      self.__logging.debug ('No Contexts')
       return
-    print ('CTX LIST: ' + str(contexts))
+    self.__logging.debug ('CTX LIST: ' + str(contexts))
     for ctx in contexts:
-      print ('TEST: ' + str(ctx['context']['cluster']))
-      print('sample:::: ' + ctx['name'])
+      self.__logging.debug ('TEST: ' + str(ctx['context']['cluster']))
+      self.__logging.debug('sample:::: ' + ctx['name'])
       if ctx['context']['cluster'] == self.clusterName:
-        print ("Found Context:: " + ctx['name'])
+        self.__logging.debug ("Found Context:: " + ctx['name'])
         return ctx['name']
       else:
-        print ("Next")
+        self.__logging.debug ("Next")
 
   def getKubernetesConfig(self):
     self.__config.load_kube_config(context=self.getContextForCluster())
@@ -91,27 +102,6 @@ class EksAuth(object):
     configuration.api_key_prefix['authorization'] = 'Bearer'
     #api = client.ApiClient(self.configuration)
     #cli = client.CoreV1Api(self.api)
-    print(configuration.api_key['authorization'])
+    self.__logging.debug(configuration.api_key['authorization'])
     return configuration
 
-import logging
-
-FORMAT = "%(asctime)-15s %(message)s"
-logging.basicConfig(format=FORMAT,level=logging.DEBUG)
-def main():
-  from kubernetes import client
-  client2 = EksAuth('eks-sample')
-  #client2.roleArn='arn:aws:iam::297286928529:role/KubernetesAdmin'
-
-  try:
-    eks = client2.getKubernetesConfig()
-    print('EKS ' + str(eks))
-    api = client.ApiClient(eks)
-    cli = client.CoreV1Api(api)
-    b=cli.list_pod_for_all_namespaces(limit=1)
-    #print(b)
-  except Exception as e :
-    logging.info(e)
-
-if __name__ == "__main__":
-  main()
