@@ -6,7 +6,7 @@ class EksAuth(object):
   import time as __time
   import logging as __logging
   FORMAT = "%(asctime)-15s %(message)s"
-  __logging.basicConfig(format=FORMAT,level=__logging.DEBUG)
+  __logging.basicConfig(format=FORMAT,level=__logging.WARNING)
   #Disable boto3 logging
   __logging.getLogger('boto3').setLevel(__logging.CRITICAL)
   #Disable botocore logging
