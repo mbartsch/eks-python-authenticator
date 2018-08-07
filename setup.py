@@ -17,4 +17,9 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     py_modules=['eksauth'],
+    install_requires=[
+      'boto3',
+      'kubernetes==7.0.0b1',
+    ],
+    #dependency_links=['git+https://github.com/kubernetes-client/python.git@master#egg=kubernetes-7.0.0b1']
 )
