@@ -8,4 +8,3 @@ to setup the K8S to use the authenticator please follow:
 
 https://aws.amazon.com/blogs/opensource/deploying-heptio-authenticator-kops/
 
-
