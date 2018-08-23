@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="eksauth",
-    version="0.0.2",
+    version="0.0.3",
     author="Marcelo Bartsch",
     author_email="marcelo@bartsch.cl",
     description="Class to authenticate agains EKS or iam-authenticator k8s clusters",
