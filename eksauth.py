@@ -34,7 +34,7 @@ class EksAuth(object):
   def getSession(self):
     '''
     This function will return a session object used to sign
-    the url, you can pass roleArn to authenticate agains
+    the url, you can set roleArn to authenticate agains
     a role
     '''
     if self.roleArn == None:
@@ -57,8 +57,8 @@ class EksAuth(object):
 
   def getToken(self):
     """
-    This function will generate the IAM EKS Role to authenticate
-    against the cluster
+    This function will generate the token that Kubernetes client need 
+    to authenticate against an EKS Cluster
     """
     sess = self.getSession()
     signer = self.__RequestSigner('sts', sess.region_name, 'sts', 'v4', sess.get_credentials(), sess.events)
@@ -80,6 +80,12 @@ class EksAuth(object):
     return value
 
   def getContextForCluster(self):
+    """
+    This will read the kubeconfig file and set the right context based
+    on the cluster name. 
+    in EKS we don't need different users as the token will be generated
+    based on the AWS IAM User/Role
+    """
     contexts, active_context = self.__config.list_kube_config_contexts()
     if not contexts:
       self.__logging.debug ('No Contexts')
@@ -95,12 +101,13 @@ class EksAuth(object):
         self.__logging.debug ("Next")
 
   def getKubernetesConfig(self):
+    """
+    Return the kubeconfig object
+    """
     self.__config.load_kube_config(context=self.getContextForCluster())
     configuration = self.__client.Configuration()
     configuration.api_key['authorization'] = self.getToken()
     configuration.api_key_prefix['authorization'] = 'Bearer'
-    #api = client.ApiClient(self.configuration)
-    #cli = client.CoreV1Api(self.api)
     self.__logging.debug(configuration.api_key['authorization'])
     return configuration
 
